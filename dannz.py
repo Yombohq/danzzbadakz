@@ -1,14 +1,12 @@
-import os
 import telebot
+import os # TAMBAHIN INI
 import time
 import random
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# PENTING: Ambil token dari Railway Variables, bukan hardcode
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN") # AMBIL DARI RAILWAY
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Simpan data sementara user. key = user_id
 user_data = {}
 
 @bot.message_handler(commands=['start', 'badakin'])
@@ -24,14 +22,13 @@ def start_cmd(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "start_badak")
 def ask_number(call):
-    bot.edit_message_text(
-        chat_id=call.message.chat.id,
-        message_id=call.message_id,
-        text="Silakan anda memasukkan nomor dengan awalan `+62` atau `62`\n\nContoh: `+628123456789`",
-        parse_mode='Markdown',
-        reply_markup=None # Hapus tombol
+    bot.answer_callback_query(call.id) # Biar loading tombolnya ilang
+    bot.send_message( # GANTI JADI SEND_MESSAGE BIAR BISA NEXT STEP
+        call.message.chat.id,
+        "Silakan anda memasukkan nomor dengan awalan `+62` atau `62`\n\nContoh: `+628123456789`",
+        parse_mode='Markdown'
     )
-    bot.register_next_step_handler(call.message, get_number_step)
+    bot.register_next_step_handler(call.message, get_number_step) # Sekarang ini valid
 
 def get_number_step(message):
     nomor = message.text.strip()
@@ -56,6 +53,7 @@ def get_number_step(message):
 
 @bot.callback_query_handler(func=lambda call: call.data in ["confirm_y", "confirm_x"])
 def confirm_step(call):
+    bot.answer_callback_query(call.id)
     if call.data == "confirm_x":
         bot.edit_message_text(
             chat_id=call.message.chat.id,
@@ -64,11 +62,10 @@ def confirm_step(call):
         )
         return
 
-    # Lanjut ke animasi
     nomor = user_data[call.from_user.id]['nomor']
-    run_fake_hack(call.message, nomor)
+    run_fake_hack(call, nomor) # KIRIM CALL BUKAN MESSAGE
 
-def run_fake_hack(message, nomor):
+def run_fake_hack(call, nomor):
     logs = [
         "Menginisialisasi modul BADAK...",
         "Melewati firewall WhatsApp LLC...",
@@ -78,7 +75,9 @@ def run_fake_hack(message, nomor):
         "Membypass limit Meta..."
     ]
 
-    # Edit pesan konfirmasi jadi animasi
+    msg = bot.edit_message_text("`[SYSTEM] Starting...`", chat_id=call.message.chat.id, message_id=call.message_id, parse_mode='Markdown')
+
+    # DIBUAT LEBIH LAMBAT BIAR GAK KENA LIMIT RAILWAY
     for i in range(11):
         percent = i * 10
         bar = '█' * i + '>' + '─' * (10 - i)
@@ -87,10 +86,12 @@ def run_fake_hack(message, nomor):
         log = random.choice(logs) if i < 10 else "Proses Selesai"
         text = f"`[SYSTEM] {log}`\n`[{bar}] {percent}%`"
         
-        bot.edit_message_text(text, chat_id=message.chat.id, message_id=message.message_id, parse_mode='Markdown')
-        time.sleep(random.uniform(0.2, 0.5))
+        try:
+            bot.edit_message_text(text, chat_id=call.message.chat.id, message_id=msg.message_id, parse_mode='Markdown')
+        except telebot.apihelper.ApiTelegramException:
+            pass # Gagal edit karena kecepetan, skip aja biar gak crash
+        time.sleep(0.5) # TADI 0.2, INI 0.5 BIAR AMAN
 
-    # Hasil Akhir
     hasil = f"""
 `[SYSTEM]` ✅ UPGRADE BERHASIL
 
@@ -104,8 +105,7 @@ def run_fake_hack(message, nomor):
 
 Tekan /badakin untuk ngulang.
     """
-    bot.edit_message_text(hasil, chat_id=message.chat.id, message_id=message.message_id, parse_mode='Markdown')
+    bot.edit_message_text(hasil, chat_id=call.message.chat.id, message_id=msg.message_id, parse_mode='Markdown')
 
 if __name__ == '__main__':
-    print("Bot BADAKIN WA Jalan di Railway...")
-    bot.polling(none_stop=True)
+    bot.infinity_polling(timeout=10, long_polling_timeout=5) # LEBIH STABIL DARI POLLING
