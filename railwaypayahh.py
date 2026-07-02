@@ -6,45 +6,32 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN) 
 
+def box(text):
+    # Escape biar <b> nya gak ke-escape
+    text = str(text).replace("&", "&amp;")
+    return f"<blockquote><pre>{text}</pre></blockquote>"
+
 def safe_edit(chat_id, msg_id, text):
     try:
-        bot.edit_message_text(text, chat_id=chat_id, message_id=msg_id, parse_mode="MarkdownV2")
+        bot.edit_message_text(text, chat_id=chat_id, message_id=msg_id, parse_mode="HTML")
         return True
     except:
         return False
 
-def mono(text): 
-    """Biar semua jadi `kutip telegram`"""
-    text = str(text).replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
-    return f"`{text}`"
-
 @bot.message_handler(commands=['start', 'badakin'])
 def start_cmd(message):
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("▶ START", callback_data="start_badak"))
-    bot.send_message(
-        message.chat.id,
-        mono("=== PANEL BADAK V8 ===\nTekan START untuk eksekusi"),
-        reply_markup=markup,
-        parse_mode="MarkdownV2"
-    )
+    markup.add(InlineKeyboardButton("MULAI", callback_data="start_badak"))
+    bot.send_message(message.chat.id, box("<b>PANEL BADAK V11.1</b>\nTekan MULAI"), reply_markup=markup, parse_mode="HTML")
 
 def get_number_step(message):
     nomor = message.text.strip().replace(" ", "")
     if not nomor.startswith(('+62', '62')):
-        bot.reply_to(message, mono("ERROR: Format nomor harus +62"), parse_mode="MarkdownV2")
+        bot.reply_to(message, box("<b>ERROR:</b> FORMAT NOMOR SALAH"), parse_mode="HTML")
         return
     markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton("Y", callback_data=f"y|{nomor}"),
-        InlineKeyboardButton("X", callback_data="x")
-    )
-    bot.send_message(
-        message.chat.id, 
-        mono(f"CONFIRM TARGET:\n{nomor}\n\nApakah sudah benar?"),
-        reply_markup=markup,
-        parse_mode="MarkdownV2"
-    )
+    markup.row(InlineKeyboardButton("Y", callback_data=f"y|{nomor}"), InlineKeyboardButton("X", callback_data="x"))
+    bot.send_message(message.chat.id, box(f"<b>CEK TARGET:</b>\n{nomor}\n\nLANJUT?"), reply_markup=markup, parse_mode="HTML")
 
 @bot.callback_query_handler(func=lambda call: True)
 def all_callbacks(call):
@@ -54,40 +41,43 @@ def all_callbacks(call):
     msg_id = call.message.id
 
     if call.data == "start_badak":
-        sent = bot.send_message(call.message.chat.id, mono("INPUT TARGET: +62..."), parse_mode="MarkdownV2")
+        sent = bot.send_message(call.message.chat.id, box("<b>INPUT TARGET:</b> +62..."), parse_mode="HTML")
         bot.register_next_step_handler(sent, get_number_step)
 
     elif call.data == "x":
-        safe_edit(call.message.chat.id, msg_id, mono("STATUS: CANCELLED BY USER"))
+        safe_edit(call.message.chat.id, msg_id, box("<b>DIBATALKAN</b>"))
 
     elif call.data.startswith("y|"):
         nomor = call.data.split("|", 1)[1]
         run_process(call.message.chat.id, msg_id, nomor)
 
 def run_process(chat_id, msg_id, nomor):
-    safe_edit(chat_id, msg_id, mono("[INIT] Starting process..."),)
-    steps = [
-        "[1/5] CONNECTING TO SERVER...",
-        "[2/5] AUTHENTICATING...",
-        "[3/5] BYPASSING SECURITY...",
-        "[4/5] INJECTING PAYLOAD...",
-        "[5/5] FINALIZING..."
-    ]
-    for i, step in enumerate(steps):
-        bar = '█' * (i+1) + '░' * (4-i)
-        text = f"{mono(step)}\n{mono(f'[{bar}] {((i+1)*20)}%')}"
-        safe_edit(chat_id, msg_id, text)
-        time.sleep(1)
+    for i in range(5):
+        safe_edit(chat_id, msg_id, box(f"PROSES... {i*25}%"))
+        time.sleep(0.7)
+    
+    # INI RESULT NYA. UDAH ADA <b>
+    hasil = f"""<b>=== RESLUT ===</b>
+<b>TARGET</b> : {nomor}
+<b>STATUS</b> : SUCCESS✅
+<b>SISTEM</b> : SUPER VIP BADAK✅
+<b>FILE</b> : BADAK V2 DANZZ✅
+================
+<b>Lakukan :</b>
 
-    hasil = f"""{mono('=== RESULT ===')}
-{mono(f'TARGET : {nomor}')}
-{mono('STATUS : SUCCESS')}
-{mono('LEVEL : ADMIN ACCESS')}
-{mono('EXPIRED : NEVER')}
-{mono('================')}
-{mono('Run /badakin to repeat')}"""
-    safe_edit(chat_id, msg_id, hasil)
+-> DIAMKAN WHATSAPP SELAMA
+24 JAM
+-> AKTIFKAN PROXY DENGAN
+KODE 1.1.1.1
+-> DIAMKAN LAGI SELAMA 6-7
+HARI (LEBIH LAMA LEBIH
+MANTAP)
+-DI HARI KE 7 PUTUSKAN PROXY
+DIAMKAN SELAMA 5 JAM
+-> LANGSUNG DEH BUAT BLAST /
+GARAP FILE✅"""
+    safe_edit(chat_id, msg_id, box(hasil))
 
 if __name__ == '__main__':
-    print("Bot V8 Terminal ON")
+    print("Bot V11.1 ON")
     bot.infinity_polling(skip_pending=True)
