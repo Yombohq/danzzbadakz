@@ -7,10 +7,10 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN) 
 
 # === SETTING WAJIB JOIN ===
-GROUP_ID = -1001234567890 
-CHANNEL_ID = -1000987654321 
-GROUP_LINK = "https://t.me/namagrublu" # Ganti
-CHANNEL_LINK = "https://t.me/namachannelu" # Ganti
+GROUP_ID = -1003574311686 
+CHANNEL_ID = -1003515213121 
+GROUP_LINK = "https://t.me/publicdanzztfr" # Ganti
+CHANNEL_LINK = "https://t.me/privatallinformationdanz" # Ganti
 
 def box(text):
     text = str(text).replace("&", "&amp;")
