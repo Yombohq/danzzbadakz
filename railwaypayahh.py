@@ -6,8 +6,13 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN) 
 
+# === SETTING WAJIB JOIN ===
+GROUP_ID = -1001234567890 
+CHANNEL_ID = -1000987654321 
+GROUP_LINK = "https://t.me/namagrublu" # Ganti
+CHANNEL_LINK = "https://t.me/namachannelu" # Ganti
+
 def box(text):
-    # Escape biar <b> nya gak ke-escape
     text = str(text).replace("&", "&amp;")
     return f"<blockquote><pre>{text}</pre></blockquote>"
 
@@ -18,20 +23,39 @@ def safe_edit(chat_id, msg_id, text):
     except:
         return False
 
+def check_membership(user_id):
+    try:
+        member_group = bot.get_chat_member(GROUP_ID, user_id).status
+        member_channel = bot.get_chat_member(CHANNEL_ID, user_id).status
+        return member_group not in ['left', 'kicked'] and member_channel not in ['left', 'kicked']
+    except:
+        return False 
+
 @bot.message_handler(commands=['start', 'badakin'])
 def start_cmd(message):
+    user_id = message.from_user.id
+
+    if not check_membership(user_id):
+        markup = InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            InlineKeyboardButton("JOIN GB1", url=GROUP_LINK),
+            InlineKeyboardButton("JOIN CHANNEL", url=CHANNEL_LINK)
+        )
+        markup.add(
+            InlineKeyboardButton("VERIFIKASI JOIN", callback_data="recheck")
+        )
+        
+        bot.send_message(
+            message.chat.id, 
+            box("<b>AKSES DITOLAK ❌</b>\nWajib join Grup + Channel dulu.\n\nKlik tombol di bawah, lalu VERIFIKASI."), 
+            reply_markup=markup, 
+            parse_mode="HTML"
+        )
+        return
+
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("MULAI", callback_data="start_badak"))
-    bot.send_message(message.chat.id, box("<b>PANEL BADAK V11.1</b>\nTekan MULAI"), reply_markup=markup, parse_mode="HTML")
-
-def get_number_step(message):
-    nomor = message.text.strip().replace(" ", "")
-    if not nomor.startswith(('+62', '62')):
-        bot.reply_to(message, box("<b>ERROR:</b> FORMAT NOMOR SALAH"), parse_mode="HTML")
-        return
-    markup = InlineKeyboardMarkup()
-    markup.row(InlineKeyboardButton("Y", callback_data=f"y|{nomor}"), InlineKeyboardButton("X", callback_data="x"))
-    bot.send_message(message.chat.id, box(f"<b>CEK TARGET:</b>\n{nomor}\n\nLANJUT?"), reply_markup=markup, parse_mode="HTML")
+    bot.send_message(message.chat.id, box("<b>PANEL BADAK V12.1</b>\nTekan MULAI"), reply_markup=markup, parse_mode="HTML")
 
 @bot.callback_query_handler(func=lambda call: True)
 def all_callbacks(call):
@@ -40,7 +64,10 @@ def all_callbacks(call):
     except: pass 
     msg_id = call.message.id
 
-    if call.data == "start_badak":
+    if call.data == "recheck":
+        start_cmd(call.message) # Cek ulang join
+
+    elif call.data == "start_badak":
         sent = bot.send_message(call.message.chat.id, box("<b>INPUT TARGET:</b> +62..."), parse_mode="HTML")
         bot.register_next_step_handler(sent, get_number_step)
 
@@ -50,6 +77,15 @@ def all_callbacks(call):
     elif call.data.startswith("y|"):
         nomor = call.data.split("|", 1)[1]
         run_process(call.message.chat.id, msg_id, nomor)
+
+def get_number_step(message):
+    nomor = message.text.strip().replace(" ", "")
+    if not nomor.startswith(('+62', '62')):
+        bot.reply_to(message, box("<b>ERROR:</b> FORMAT NOMOR SALAH"), parse_mode="HTML")
+        return
+    markup = InlineKeyboardMarkup()
+    markup.row(InlineKeyboardButton("Y", callback_data=f"y|{nomor}"), InlineKeyboardButton("X", callback_data="x"))
+    bot.send_message(message.chat.id, box(f"<b>CEK TARGET:</b>\n{nomor}\n\nLANJUT?"), reply_markup=markup, parse_mode="HTML")
 
 def run_process(chat_id, msg_id, nomor):
     for i in range(5):
