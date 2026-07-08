@@ -20,11 +20,11 @@ let mailData = JSON.parse(fs.readFileSync(mailFile, 'utf-8'));
 
 const GROUP_1_ID = -1003515213121;
 
-const GROUP_2_ID = -1003271207422;
+const GROUP_2_ID = -1003574311686;
 
-const GROUP_1_LINK = 'https://t.me/freelancefiledanzz';
+const GROUP_1_LINK = 'https://t.me/privatallinformationdanz';
 
-const GROUP_2_LINK = 'https://t.me/gachanokosfix';
+const GROUP_2_LINK = 'https://t.me/publicdanzztfr';
 
 // ===== SAVE =====
 
